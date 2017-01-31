@@ -141,7 +141,7 @@
   text-align: center;
   white-space: nowrap;
   overflow-x: auto;
-  overflow-y:visible;
+  overflow-y: hidden;
   position: relative;
 }
 

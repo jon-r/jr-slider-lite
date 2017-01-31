@@ -178,7 +178,7 @@ window.addEventListener('load', (function (d) {
 
         $this.setImg(newImg.href, newImg.getAttribute('data-gallery-srcset'));
 
-        if ($this.focus < listCount) {
+        if ($this.focus < listCount - 1) {
           $this.rwdLoadImg($this.els.thumbnails[$this.focus + 1]);
         }
       }
