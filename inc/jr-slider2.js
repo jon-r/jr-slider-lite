@@ -31,6 +31,7 @@ window.addEventListener('load', (function (d) {
       return fn();
     } else {
       listen(img, 'load', function () {
+
         return fn();
       });
       listen(img, 'error', function (e) {
@@ -84,6 +85,7 @@ window.addEventListener('load', (function (d) {
   //updates an element's height to that of its first child
   function setHeightByChild(el) {
     var height = el.firstElementChild.clientHeight - 4; //to hide white borders from rounding
+
     el.style.height = height + 'px';
   }
 /* gallery class ------------------------------------------------------------ */
@@ -101,7 +103,9 @@ window.addEventListener('load', (function (d) {
       return setHeightByChild(this.els.main);
     }, 500).bind(this));
     whenLoaded(this.els.main.firstElementChild, function () {
-      return setHeightByChild($this.els.main);
+      return setTimeout(function () {
+        setHeightByChild($this.els.main);
+      }, 300);
     });
 
     this.replay();
@@ -178,7 +182,7 @@ window.addEventListener('load', (function (d) {
 
         $this.setImg(newImg.href, newImg.getAttribute('data-gallery-srcset'));
 
-        if ($this.focus < listCount - 1) {
+        if ($this.focus < listCount) {
           $this.rwdLoadImg($this.els.thumbnails[$this.focus + 1]);
         }
       }
@@ -232,7 +236,7 @@ window.addEventListener('load', (function (d) {
     if (zoomBtn.length > 0) {
       zoomBtn[0].href = url;
     }
-  }
+  };
 
   // activates the lister if it is active
   Gallery.prototype.replay = function () {

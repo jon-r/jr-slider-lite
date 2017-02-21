@@ -33,11 +33,6 @@
             animation-duration: <?php echo $opts['animation-duration'] ?>ms" >
       <img src="<?php echo $opts['gallery'][0]['url'] ?>" srcset="<?php echo $srcset ?>" >
     </div>
-    <?php /* SCP SPECIAL BONUS SECTION */ if (get_post_type() == 'cars_list') : ?>
-      <a class="btn-zoom" href="<?php echo $opts['gallery'][0]['url'] ?>" data-toggle="lightbox" data-gallery="car-page" >
-        <i class="fa fa-search fa-lg fa-fw" aria-hidden="true" ></i>
-      </a>
-    <?php endif ?>
 
     <div class="gallery-links" aria-hidden="true" style="display:none;visibility:hidden" >
       <?php for ($i = 0; $i < $n; $i++) : ?>
