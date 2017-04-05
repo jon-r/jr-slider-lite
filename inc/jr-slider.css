@@ -10,33 +10,37 @@
   background-color: #eee;
 }
 
-.gallery-main img {
+.gallery-image {
   position: absolute;
-  -webkit-animation-duration: inherit;
-  animation-duration: inherit;
+  transition-duration: inherit;
   width: 100%;
   top: 50%;
   -webkit-transform: translateY(-50%);
   transform: translateY(-50%);
 }
 
-.gallery-fade img {
-  -webkit-animation-name: fade-in;
-  animation-name: fade-in;
+.gallery-image img {
+  width: 100%;
+  height: auto;
 }
 
-.gallery-slide img:last-of-type {
-  -webkit-animation-name: slide-in;
-  animation-name: slide-in;
-  -webkit-animation-fill-mode: backwards;
-  animation-fill-mode: backwards;
+.gallery-anim-fade .gallery-image {
+  opacity: 0;
+  transition-property: opacity;
+
 }
 
-.gallery-slide img:nth-last-of-type(n + 2) {
-  -webkit-animation-name: slide-out;
-  animation-name: slide-out;
-  -webkit-animation-fill-mode: forwards;
-  animation-fill-mode: forwards;
+.gallery-anim-fade .gallery-image.active {
+  opacity: 1;
+}
+
+.gallery-anim-slide .gallery-image {
+  transform: translate(100%,-50%);
+  transition-property: transform;
+}
+
+.gallery-anim-slide .gallery-image.active {
+  transform: translateY(-50%);
 }
 
 @-webkit-keyframes slide-in {

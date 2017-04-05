@@ -19,15 +19,6 @@ window.addEventListener('load', (function (d) {
       listen(el, listener[0], listener[1]);
     });
   }
-  //replace an elements content. delayed replacments gives time for transitions
-  function replaceChildren(parent, newChild, delay) {
-    parent.appendChild(newChild);
-    setTimeout(function () {
-      while (parent.firstChild && parent.firstChild !== newChild) {
-        parent.removeChild(parent.firstChild);
-      }
-    }, delay);
-  }
   //polyfill for el.complete
   function whenLoaded(img, fn) {
     if (img.complete) {
@@ -40,13 +31,6 @@ window.addEventListener('load', (function (d) {
       listen(img, 'error', function (e) {
         console.log('error', e);
       });
-    }
-  }
-  //preloads images
-  function preload(src) {
-    if (src) {
-      var img  = d.createElement('img');
-      img.src = src;
     }
   }
   // Returns a function, that, as long as it continues to be invoked, will not be triggered.
@@ -85,12 +69,14 @@ window.addEventListener('load', (function (d) {
       parent.scrollLeft -= parentRight - childRight;
     }
   }
-  //updates an element's height to that of its first child
-  function setHeightByChild(el) {
-    var height = el.firstElementChild.clientHeight - 4; //to hide white borders from rounding
 
-    el.style.height = height + 'px';
+  //sets the parent element's height
+  function setParentHeight(el) {
+    var height = el.clientHeight - 4; //to hide white borders from rounding
+
+    el.parentElement.style.height = height + 'px';
   }
+
 /* gallery class ------------------------------------------------------------ */
 
   function Gallery(el) {
@@ -102,39 +88,37 @@ window.addEventListener('load', (function (d) {
       ['mouseout', this.hoverEvent.bind(this)],
       ['click', this.clickEvent.bind(this)]
     ]);
+
     listen(window, 'resize', debounce(function () {
-      return setHeightByChild(this.els.main);
+      return setParentHeight(this.els.slides[this.focus]);
     }, 500).bind(this));
-    whenLoaded(this.els.main.firstElementChild, function () {
+
+    whenLoaded(this.els.slides[this.focus].firstElementChild, function () {
       return setTimeout(function () {
-        setHeightByChild($this.els.main);
+        setParentHeight($this.els.slides[0]);
       }, 300);
     });
 
     this.replay();
   }
-  //build up the class object
+  //construct the class object
   Gallery.prototype.init = function init(el) {
     var $this = this;
 
     this.timer = el.getAttribute('data-gallery-autoplay');
 
     this.els = {
-      thumbnails: el.getElementsByClassName('gallery-links')[0].children,
       lists: el.getElementsByClassName('gallery-list'),
-      main: el.getElementsByClassName('gallery-focus')[0]
-    };
-    this.focus = 0;
-    this.setup = {
-      rwdLg : el.getAttribute('data-gallery-rwd-lg'),
-      rwdMd : el.getAttribute('data-gallery-rwd-md'),
-      loadWait: false,
-      hoverLock: false,
-      anim: el.getAttribute('data-gallery-anim')
+      slides: el.getElementsByClassName('gallery-focus')[0].children
     };
 
-    if (this.els.thumbnails.length > 1) {
-      $this.rwdLoadImg(this.els.thumbnails[1]);
+    this.loaded = [this.els.slides[0].dataset.imageId];
+
+    this.hoverlock = false
+    this.focus = 0;
+
+    if (this.els.slides.length > 1) {
+      $this.getImgAjax(1);
     }
   };
   //handles the user clicking on the slider
@@ -142,8 +126,7 @@ window.addEventListener('load', (function (d) {
     var fn = e.target.getAttribute('data-go'),
       nav = this.nav();
 
-    if (!this.setup.loadWait && fn) {
-      this.setup.loadWait = true; // button spam prevention
+    if (fn) {
       e.preventDefault();
 
       return (isFinite(fn)) ? nav.img(fn) : nav[fn]();
@@ -151,12 +134,13 @@ window.addEventListener('load', (function (d) {
   };
   //handles the hover
   Gallery.prototype.hoverEvent = function (e) {
-    this.setup.hoverLock = e.type === 'mouseover';
+    this.hoverLock = e.type === 'mouseover';
   };
   //navigation controllers
   Gallery.prototype.nav = function () {
     var $this = this,
-      $imgCount = this.els.thumbnails.length;
+      $els = this.els,
+      $imgCount = $els.slides.length;
 
     return {
       img: function (n) {
@@ -172,94 +156,76 @@ window.addEventListener('load', (function (d) {
         this.go();
       },
       go: function () {
-        var lists = $this.els.lists,
-          newImg = $this.els.thumbnails[$this.focus],
-          i,
-          listCount = lists.length;
+        var focusImg = $els.slides[$this.focus],
+          id = focusImg.dataset.imageId;
 
-        $this.getImgAjax(newImg.dataset.galleryImgId );
-
-        for (i = 0; i < listCount; i++) {
-
-          makeActive(lists[i], $this.focus, 'active');
-
-          if (lists[i].classList.contains('gallery-thumbs')) {
-
-            scrollXToView(lists[i], lists[i].children[$this.focus]);
-
-          }
+        if ($this.loaded.indexOf(id) == -1) {
+          $this.getImgAjax($this.focus);
         }
 
-        $this.setImg(newImg.href, newImg.getAttribute('data-gallery-srcset'));
+        whenLoaded(focusImg.firstElementChild, function () {
 
-        if ($this.focus < listCount) {
-          $this.rwdLoadImg($this.els.thumbnails[$this.focus + 1]);
+          $this.setImg();
+          setParentHeight(focusImg);
+
+        });
+
+        if ($this.focus < $imgCount && $this.loaded.indexOf($this.focus + 1) != -1) {
+          $this.getImgAjax($this.focus + 1);
         }
       }
     };
   };
+
   // replaces the main image with the new image
-  Gallery.prototype.setImg = function (newSrc, srcset) {
-    var $this = this,
-      frame = this.els.main,
-      img = d.createElement('img'),
-      delay = $this.setup.anim;
+  Gallery.prototype.setImg = function () {
+    var lists = this.els.lists,
+      listCount = lists.length,
+      i;
 
-    frame.classList.add('loading');
-    img.src = newSrc;
-    img.setAttribute('srcset', srcset);
+    for (i = 0; i < listCount; i++) {
 
-    whenLoaded(img, function () {
-      replaceChildren(frame, img, delay);
-      frame.classList.remove('loading');
-      setTimeout(function () {
-        $this.setup.loadWait = false;
-        setHeightByChild(frame);
-      }, (delay * 2));
-    });
+      makeActive(lists[i], this.focus, 'active');
+
+      if (lists[i].classList.contains('gallery-thumbs')) {
+        scrollXToView(lists[i], lists[i].children[this.focus]);
+      }
+    }
   };
 
   //ajax gets image
-  Gallery.prototype.getImgAjax = function (id) {
+  Gallery.prototype.getImgAjax = function (i) {
+
+    var $this = this,
+      id = this.els.slides[i].dataset.imageId;
 
     nanoajax.ajax({
       url: fileSrc.admin,
       method: 'POST',
       body: 'action=gallery_img_get&id=' + id
     }, function (code, responseText) {
-      console.log(JSON.parse(responseText));
-    })
+      var div = $this.els.slides[i],
+        ajaxArr = JSON.parse(responseText);
+
+      $this.loaded.push(id);
+
+
+      div.insertAdjacentHTML('afterbegin', ajaxArr.img);
+      if (ajaxArr.label) {
+        div.insertAdjacentHTML('beforeend', ajaxArr.label)
+      };
+
+    });
 
   }
 
-  //responsively preloads based on screen resolution
-  Gallery.prototype.rwdLoadImg = function (img) {
-
-    var width = window.innerWidth,
-      src = img.href;
-
-    switch (true) {
-    case (width < this.setup.rwdMd):
-      src = img.getAttribute('data-gallery-md');
-      break;
-    case (width < this.setup.rwdLg):
-      src = img.getAttribute('data-gallery-lg');
-      break;
-    default:
-      break;
-    }
-
-    preload(src);
-  };
-
-
-  // activates the lister if it is active
+  // activates the ticker if it is active
   Gallery.prototype.replay = function () {
     var $this = this;
 
     if ($this.timer !== 'false') {
       setTimeout(function () {
-        if (!$this.setup.loadWait && !$this.setup.hoverLock) {
+        if (!$this.hoverLock) {
           $this.nav().next();
         }
         $this.replay();

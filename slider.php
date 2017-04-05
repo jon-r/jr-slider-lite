@@ -7,7 +7,7 @@ function jr_slider_setup() {
 
   if ($setPagesBool) {
     wp_enqueue_script("jr_slider_script", get_stylesheet_directory_uri().'/jr-slider-lite/inc/jr-slider2.js', false, false, true );
-    wp_enqueue_style("jr_slider_style", get_stylesheet_directory_uri().'/jr-slider-lite/inc/jr-slider.min.css' );
+    wp_enqueue_style("jr_slider_style", get_stylesheet_directory_uri().'/jr-slider-lite/inc/jr-slider.css' );
 
     //adding localisation for ajax queries
     wp_localize_script( 'jr_slider_script', 'fileSrc', [
@@ -47,8 +47,8 @@ function jr_imageGet() {
 
   if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-
-    $out = wp_get_attachment_image( $_POST['id'], 'full');
+    $out['img'] = wp_get_attachment_image( $_POST['id'], 'full');
+    $out['label'] = wp_get_attachment_label( $_POST['id'] );
 
   } else {
     // Not a POST request, set a 403 (forbidden) response code.
@@ -63,18 +63,10 @@ function jr_imageGet() {
 add_action('wp_ajax_gallery_img_get', 'jr_imageGet');
 add_action('wp_ajax_nopriv_gallery_img_get', 'jr_imageGet');
 
-function jr_image_placehold($imgArr) {
-  $img = wp_get_attachment_image( $imgArr['id'], 'full' );
-  $desc = !empty($imgArr['description']) ? '' : 'data-desc="'.$imgArr['description'].'"';
-  $title = !empty($imgArr['title']) ? '' : 'data-title="'.$imgArr['title'].'"';
-  $caption = !empty($imgArr['caption']) ? '' : 'data-caption="'.$imgArr['caption'].'"';
-
-  return sprintf('<div data-img="%s" %s %s %s ></div>', $img, $desc, $title, $caption);
-}
-
 
 //takes the source of the images (wp gallery, acf gallery or just array of numbers), and creates assoc array to match ACF gallery
 function jr_get_image_ids($imgInput) {
+
 
   if (is_string($imgInput) && has_shortcode( $imgInput, 'gallery' )) {
     // wp gallery shortcode
@@ -98,17 +90,22 @@ function jr_get_image_ids($imgInput) {
     $out = [];
   }
 
+  wp_get_attachment_label($out[0]);
+
   return $out;
 }
 
-// setup the post id data to match ACF, where needed
-function wp_get_attachment( $attachment_id ) {
+
+function wp_get_attachment_label( $attachment_id ) {
 
   $attachment = get_post( $attachment_id );
-  return array(
-    'id' => $attachment_id,
-    'title' => $attachment->post_title,
-    'caption' => $attachment->post_excerpt,
-    'description' => $attachment->post_content
-  );
+  $attachmentInfo = [
+    'caption' => !empty($attachment->post_excerpt) ? '<span class="gal-img-caption" >'.$attachment->post_excerpt.'</span>' : false,
+    'description' => !empty($attachment->post_content) ? '<span class="gal-img-desc" >'.$attachment->post_content.'</span>' : false
+  ];
+
+  if (array_filter($attachmentInfo)) {
+    return '<div class="gallery-label">'.implode('', $attachmentInfo).'</div>';
+  }
 }
+
