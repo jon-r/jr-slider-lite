@@ -16,9 +16,11 @@
     $imgObj['sizes']['large'], $responsive['lg'],
     $imgObj['url'], $imgObj['width']
   );
+
+$imgIDs = jr_get_image_ids($opts['gallery']);
 ?>
 
-<section class="site-color"
+<section class="site-color" data-jr-gallery
    data-gallery-id="<?php echo $galID ?>"
    data-gallery-autoplay="<?php echo ($opts['autoplay']) ? $opts['autoplay'] : 'false'; ?>"
    data-gallery-rwd-lg="<?php echo $responsive['lg'] ?>"
@@ -48,10 +50,14 @@
         );
       ?>
       <a href="<?php echo $opts['gallery'][$i]['url'] ?>"
+         data-gallery-img-id="<?php echo $imgIDs[$i] ?>"
          data-gallery-srcset="<?php echo $srcset ?>"
          data-gallery-md="<?php echo $sizeMd ?>"
-         data-gallery-lg="<?php echo $sizeLg ?>" ></a>
+         data-gallery-lg="<?php echo $sizeLg ?>" >
+      </a>
       <?php endfor; ?>
+
+
     </div>
 
     <?php if ($opts['has_arrow'] && !$singleSlide) : ?>

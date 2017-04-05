@@ -1,7 +1,10 @@
+// https://github.com/yanatan16/nanoajax
+!function(t,e){function n(t){return t&&e.XDomainRequest&&!/MSIE 1/.test(navigator.userAgent)?new XDomainRequest:e.XMLHttpRequest?new XMLHttpRequest:void 0}function o(t,e,n){t[e]=t[e]||n}var r=["responseType","withCredentials","timeout","onprogress"];t.ajax=function(t,a){function s(t,e){return function(){c||(a(void 0===f.status?t:f.status,0===f.status?"Error":f.response||f.responseText||e,f),c=!0)}}var u=t.headers||{},i=t.body,d=t.method||(i?"POST":"GET"),c=!1,f=n(t.cors);f.open(d,t.url,!0);var l=f.onload=s(200);f.onreadystatechange=function(){4===f.readyState&&l()},f.onerror=s(null,"Error"),f.ontimeout=s(null,"Timeout"),f.onabort=s(null,"Abort"),i&&(o(u,"X-Requested-With","XMLHttpRequest"),e.FormData&&i instanceof e.FormData||o(u,"Content-Type","application/x-www-form-urlencoded"));for(var p,m=0,v=r.length;v>m;m++)p=r[m],void 0!==t[p]&&(f[p]=t[p]);for(var p in u)f.setRequestHeader(p,u[p]);return f.send(i),f},e.nanoajax=t}({},function(){return this}());
+
 window.addEventListener('load', (function (d) {
   "use strict";
 
-  var galleries = d.querySelectorAll('[data-gallery-id]'),
+  var galleries = d.querySelectorAll('[data-jr-gallery]'),
     galleryCount = galleries.length,
     galleryObjs = [];
 
@@ -115,6 +118,7 @@ window.addEventListener('load', (function (d) {
     var $this = this;
 
     this.timer = el.getAttribute('data-gallery-autoplay');
+
     this.els = {
       thumbnails: el.getElementsByClassName('gallery-links')[0].children,
       lists: el.getElementsByClassName('gallery-list'),
@@ -173,10 +177,16 @@ window.addEventListener('load', (function (d) {
           i,
           listCount = lists.length;
 
+        $this.getImgAjax(newImg.dataset.galleryImgId );
+
         for (i = 0; i < listCount; i++) {
+
           makeActive(lists[i], $this.focus, 'active');
+
           if (lists[i].classList.contains('gallery-thumbs')) {
+
             scrollXToView(lists[i], lists[i].children[$this.focus]);
+
           }
         }
 
@@ -199,8 +209,6 @@ window.addEventListener('load', (function (d) {
     img.src = newSrc;
     img.setAttribute('srcset', srcset);
 
-    $this.zoomSet(newSrc);
-
     whenLoaded(img, function () {
       replaceChildren(frame, img, delay);
       frame.classList.remove('loading');
@@ -210,6 +218,20 @@ window.addEventListener('load', (function (d) {
       }, (delay * 2));
     });
   };
+
+  //ajax gets image
+  Gallery.prototype.getImgAjax = function (id) {
+
+    nanoajax.ajax({
+      url: fileSrc.admin,
+      method: 'POST',
+      body: 'action=gallery_img_get&id=' + id
+    }, function (code, responseText) {
+      console.log(JSON.parse(responseText));
+    })
+
+  }
+
   //responsively preloads based on screen resolution
   Gallery.prototype.rwdLoadImg = function (img) {
 
@@ -229,14 +251,7 @@ window.addEventListener('load', (function (d) {
 
     preload(src);
   };
-  //bonus SCP zoom function
-  Gallery.prototype.zoomSet = function (url) {
-    var zoomBtn = d.getElementsByClassName('btn-zoom');
 
-    if (zoomBtn.length > 0) {
-      zoomBtn[0].href = url;
-    }
-  };
 
   // activates the lister if it is active
   Gallery.prototype.replay = function () {
